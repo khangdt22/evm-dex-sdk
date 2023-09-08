@@ -1,0 +1,82 @@
+{
+    "name": "@khangdt22/evm-dex-sdk",
+    "version": "0.0.0",
+    "description": "A SDK to help easy interact with supported DEX on any EVM-compatible blockchain.",
+    "license": "MIT",
+    "author": "Diep Dang <khangdt310722@gmail.com>",
+    "homepage": "https://github.com/khangdt22/evm-dex-sdk",
+    "repository": "github:khangdt22/evm-dex-sdk",
+    "bugs": {
+        "email": "khangdt310722@gmail.com",
+        "url": "https://github.com/khangdt22/evm-dex-sdk/issues"
+    },
+    "type": "module",
+    "sideEffects": false,
+    "files": [
+        "dist",
+        "src"
+    ],
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "default": "./dist/index.js",
+            "types": "./dist/index.d.ts"
+        }
+    },
+    "packageManager": "pnpm@8.7.1",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "scripts": {
+        "build": "rimraf dist && tsc",
+        "release": "np --no-yarn --no-release-draft --yolo --message='chore: release v%s'",
+        "up": "ncu -i",
+        "lint": "pnpm prettier '**/*.!(js|jsx|cjs|mjs|ts|tsx|cts|mts|d.ts|vue)' && pnpm eslint .",
+        "eslint": "eslint --ignore-path .gitignore --fix",
+        "prettier": "prettier --ignore-path .gitignore --ignore-unknown --write",
+        "preinstall": "npx only-allow pnpm",
+        "prepare": "simple-git-hooks",
+        "prepublishOnly": "pnpm build"
+    },
+    "dependencies": {
+        "@ethersproject/bignumber": "^5.7.0",
+        "@khangdt22/utils": "latest",
+        "abitype": "^0.9.8",
+        "viem": "^1.9.3"
+    },
+    "devDependencies": {
+        "@commitlint/cli": "^17.7.1",
+        "@commitlint/config-conventional": "latest",
+        "@khangdt22/eslint-config": "latest",
+        "@khangdt22/prettier-config": "latest",
+        "@types/node": "^20.5.7",
+        "eslint": "^8.48.0",
+        "lint-staged": "^14.0.1",
+        "np": "^8.0.4",
+        "npm-check-updates": "^16.13.2",
+        "only-allow": "^1.1.1",
+        "prettier": "^3.0.3",
+        "rimraf": "^5.0.1",
+        "simple-git-hooks": "^2.9.0",
+        "typescript": "^5.2.2"
+    },
+    "commitlint": {
+        "extends": "@commitlint/config-conventional"
+    },
+    "eslintConfig": {
+        "extends": "@khangdt22"
+    },
+    "lint-staged": {
+        "*.{js,jsx,cjs,mjs,ts,tsx,cts,mts,vue}": "pnpm eslint",
+        "*.!(js|jsx|cjs|mjs|ts|tsx|cts|mts|d.ts|vue)": "pnpm prettier"
+    },
+    "prettier": "@khangdt22/prettier-config",
+    "simple-git-hooks": {
+        "commit-msg": "npx --no -- commitlint --edit ${1}",
+        "pre-commit": "npx tsc --noEmit && npx lint-staged"
+    }
+}
