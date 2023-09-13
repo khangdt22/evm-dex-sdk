@@ -1,6 +1,6 @@
 {
     "name": "@khangdt22/evm-dex-sdk",
-    "version": "0.1.0",
+    "version": "0.0.1",
     "description": "A SDK to help easy interact with supported DEX on any EVM-compatible blockchain.",
     "license": "MIT",
     "author": "Diep Dang <khangdt310722@gmail.com>",
