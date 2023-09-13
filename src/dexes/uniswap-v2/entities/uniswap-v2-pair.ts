@@ -1,28 +1,35 @@
-import { parseUnits, keccak256, encodePacked, isAddressEqual } from 'viem'
-import { Pair, Token } from '../../../entities'
-import type { UniswapV2PairInfo, UniswapV2PairData } from '../types'
+import type { Address } from 'viem'
+import { parseUnits, keccak256, encodePacked, isAddressEqual, formatUnits } from 'viem'
+import { Pair, Token, NativeToken } from '../../../entities'
+import type { UniswapV2PairData, UniswapV2PairMetadata } from '../types'
+import { getCreate2Address, isFormattedNumber } from '../../../utils'
+import type { FormattedNumber, InputNumber } from '../../../types'
 import type { UniswapV2 } from '../uniswap-v2'
-import type { Address } from '../../../types'
-import { getCreate2Address } from '../../../utils'
 
-export class UniswapV2Pair extends Pair<UniswapV2> {
+export class UniswapV2Pair extends Pair<NativeToken | Token> {
     public readonly address: Address
+    public readonly dex: UniswapV2
 
     public readonly token0: Token
     public readonly token1: Token
 
     public readonly fee: bigint
     public readonly feeDecimals: number
-    public readonly oneHundredPercent: bigint
 
     public reserve0: bigint
     public reserve1: bigint
 
-    public constructor(options: UniswapV2PairInfo, { reserveA, reserveB }: UniswapV2PairData) {
-        super(options)
+    private readonly oneHundredPercent: bigint
 
-        const { tokenA, tokenB, fee } = options
+    public constructor(data: UniswapV2PairData, { reserveA, reserveB }: UniswapV2PairMetadata) {
+        super(data)
+
+        this.dex = data.dex
+
+        const tokenA = data.tokenA.wrapped
+        const tokenB = data.tokenB.wrapped
         const isTokenASortsBeforeTokenB = tokenA.sortsBefore(tokenB)
+
         const [token0, token1] = isTokenASortsBeforeTokenB ? [tokenA, tokenB] : [tokenB, tokenA]
         const [reserve0, reserve1] = isTokenASortsBeforeTokenB ? [reserveA, reserveB] : [reserveB, reserveA]
 
@@ -31,38 +38,54 @@ export class UniswapV2Pair extends Pair<UniswapV2> {
         this.reserve0 = reserve0
         this.reserve1 = reserve1
 
-        this.feeDecimals = Number(fee.toString().split('.')[1]?.length ?? 0)
-        this.fee = parseUnits(fee.toString(), this.feeDecimals)
+        this.feeDecimals = Number(data.fee.toString().split('.')[1]?.length ?? 0)
+        this.fee = parseUnits(data.fee.toString(), this.feeDecimals)
         this.oneHundredPercent = parseUnits('100', this.feeDecimals)
 
         this.address = this.computeAddress()
     }
 
-    public involvesToken(token: Address | Token) {
-        if (token instanceof Token) {
-            token = token.address
+    public involves(token: Address | NativeToken | Token) {
+        let address: Address
+
+        if (token instanceof NativeToken) {
+            address = token.wrapped.address
+        } else if (token instanceof Token) {
+            address = token.address
+        } else {
+            address = token
         }
 
-        return isAddressEqual(token, this.token0.address) || isAddressEqual(token, this.token1.address)
+        return isAddressEqual(address, this.token0.address) || isAddressEqual(address, this.token1.address)
     }
 
-    public getAmountOut(tokenIn: Token, amountIn: bigint) {
-        const [reserveIn, reserveOut] = this.getReserves(tokenIn)
+    public getAmountOut(tokenIn: NativeToken | Token, amountIn: InputNumber): FormattedNumber {
+        const token = tokenIn instanceof NativeToken ? tokenIn.wrapped : tokenIn
+        const [reserveIn, reserveOut] = this.getReserves(token)
+        const amount = isFormattedNumber(amountIn) ? amountIn.value : parseUnits(amountIn.toString(), token.decimals)
 
-        const amountInWithFee = amountIn * (this.oneHundredPercent - this.fee)
+        const amountInWithFee = amount * (this.oneHundredPercent - this.fee)
         const numerator = amountInWithFee * reserveOut
         const denominator = reserveIn * this.oneHundredPercent + amountInWithFee
+        const value = numerator / denominator
 
-        return numerator / denominator
+        return { value, decimals: token.decimals, formatted: formatUnits(value, token.decimals) }
     }
 
-    public getAmountIn(tokenOut: Token, amountOut: bigint) {
-        const [reserveOut, reserveIn] = this.getReserves(tokenOut)
+    public getAmountIn(tokenOut: NativeToken | Token, amountOut: InputNumber): FormattedNumber {
+        const token = tokenOut instanceof NativeToken ? tokenOut.wrapped : tokenOut
+        const [reserveOut, reserveIn] = this.getReserves(token)
+        const amount = isFormattedNumber(amountOut) ? amountOut.value : parseUnits(amountOut.toString(), token.decimals)
 
-        const numerator = reserveIn * amountOut * this.oneHundredPercent
-        const denominator = (reserveOut - amountOut) * (this.oneHundredPercent - this.fee)
+        const numerator = reserveIn * amount * this.oneHundredPercent
+        const denominator = (reserveOut - amount) * (this.oneHundredPercent - this.fee)
+        const value = (numerator / denominator) + 1n
 
-        return (numerator / denominator) + 1n
+        return { value, decimals: token.decimals, formatted: formatUnits(value, token.decimals) }
+    }
+
+    public priceOf(token: NativeToken | Token): FormattedNumber {
+        return this.getAmountOut(token, 1)
     }
 
     public getReserves(tokenA: Token): [bigint, bigint] {
@@ -78,7 +101,7 @@ export class UniswapV2Pair extends Pair<UniswapV2> {
         return getCreate2Address(
             this.dex.factory,
             keccak256(encodePacked(['address', 'address'], [this.token0.address, this.token1.address])),
-            this.dex.pairInitCodeHash
+            this.dex.pairBytecodeHash
         )
     }
 }

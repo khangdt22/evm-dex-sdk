@@ -1,11 +1,12 @@
-import { parseUnits, type EncodeFunctionDataParameters } from 'viem'
-import { Token, Trade } from '../../../entities'
+import { parseUnits, encodeFunctionData } from 'viem'
+import { Token, Trade, NativeToken } from '../../../entities'
 import { TradeType } from '../../../constants'
 import type { UniswapV2TradeOptions } from '../types'
-import { toBigInt, percentOf, isNative } from '../../../utils'
+import { toBigInt, percentOf, isNative, isFormattedNumber } from '../../../utils'
 import { UNISWAP_V2_ROUTER } from '../../../abis'
+import type { UniswapV2Pair } from './uniswap-v2-pair'
 
-export class UniswapV2Trade extends Trade<UniswapV2TradeOptions> {
+export class UniswapV2Trade extends Trade<Token | NativeToken, UniswapV2Pair> {
     public readonly wrappedInput: Token
     public readonly wrappedOutput: Token
     public readonly path: Token[]
@@ -41,16 +42,14 @@ export class UniswapV2Trade extends Trade<UniswapV2TradeOptions> {
         return this.inputAmount + toBigInt(percentOf(this.inputAmount, this.slippage))
     }
 
-    public getEncodeParameters() {
-        const abi = UNISWAP_V2_ROUTER
-        const functionName = this.getFunctionName()
+    public getTransactionData() {
         const args = this.tradeType === TradeType.EXACT_INPUT ? this.getExactInputArgs() : this.getExactOutputArgs()
 
-        return <EncodeFunctionDataParameters<typeof abi, typeof functionName>>{
-            abi,
-            functionName,
-            args,
-        }
+        return encodeFunctionData({
+            abi: UNISWAP_V2_ROUTER,
+            functionName: this.getFunctionName() as any,
+            args: args as any,
+        })
     }
 
     public getTransactionValue() {
@@ -119,14 +118,20 @@ export class UniswapV2Trade extends Trade<UniswapV2TradeOptions> {
 
     protected getInputAmount(options: UniswapV2TradeOptions) {
         if (options.type === TradeType.EXACT_INPUT) {
+            if (isFormattedNumber(options.amountIn)) {
+                return options.amountIn.value
+            }
+
             return parseUnits(options.amountIn.toString(), this.wrappedInput.decimals)
         }
 
-        const inputAmounts: bigint[] = [parseUnits(options.amountOut.toString(), this.wrappedOutput.decimals)]
+        // eslint-disable-next-line max-len
+        const amountOut = isFormattedNumber(options.amountOut) ? options.amountOut.value : parseUnits(options.amountOut.toString(), this.wrappedOutput.decimals)
+        const inputAmounts: bigint[] = [amountOut]
         const path = [...this.path].reverse()
 
         for (const [i, pair] of [...this.pairs].reverse().entries()) {
-            inputAmounts[i + 1] = pair.getAmountIn(path[i], inputAmounts[i])
+            inputAmounts[i + 1] = pair.getAmountIn(path[i], inputAmounts[i]).value
         }
 
         return inputAmounts.at(-1)!
@@ -134,13 +139,19 @@ export class UniswapV2Trade extends Trade<UniswapV2TradeOptions> {
 
     protected getOutputAmount(options: UniswapV2TradeOptions) {
         if (options.type === TradeType.EXACT_OUTPUT) {
+            if (isFormattedNumber(options.amountOut)) {
+                return options.amountOut.value
+            }
+
             return parseUnits(options.amountOut.toString(), this.wrappedOutput.decimals)
         }
 
-        const outputAmounts: bigint[] = [parseUnits(options.amountIn.toString(), this.wrappedInput.decimals)]
+        // eslint-disable-next-line max-len
+        const amountIn = isFormattedNumber(options.amountIn) ? options.amountIn.value : parseUnits(options.amountIn.toString(), this.wrappedInput.decimals)
+        const outputAmounts: bigint[] = [amountIn]
 
         for (const [i, pair] of this.pairs.entries()) {
-            outputAmounts[i + 1] = pair.getAmountOut(this.path[i], outputAmounts[i])
+            outputAmounts[i + 1] = pair.getAmountOut(this.path[i], outputAmounts[i]).value
         }
 
         return outputAmounts.at(-1)!

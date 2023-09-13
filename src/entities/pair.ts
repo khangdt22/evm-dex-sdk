@@ -1,19 +1,24 @@
-import type { Address, PairInfo } from '../types'
-import { Dex } from '../dexes'
+import type { Address } from 'viem'
+import type { FormattedNumber, PairData, InputNumber } from '../types'
 import type { Token } from './token'
+import type { Currency } from './currency'
 
-export abstract class Pair<TDex extends Dex = Dex> {
+export abstract class Pair<TCurrency extends Currency = Token> {
     public abstract readonly address: Address
 
-    public readonly dex: TDex
-    public readonly tokenA: Token
-    public readonly tokenB: Token
+    public readonly tokenA: TCurrency
+    public readonly tokenB: TCurrency
 
-    protected constructor({ dex, tokenA, tokenB }: PairInfo<TDex>) {
-        this.dex = dex
+    protected constructor({ tokenA, tokenB }: PairData<TCurrency>) {
         this.tokenA = tokenA
         this.tokenB = tokenB
     }
 
-    public abstract involvesToken(token: Address | Token): boolean
+    public abstract involves(currency: TCurrency): boolean
+
+    public abstract getAmountOut(tokenIn: TCurrency, amountIn: InputNumber): FormattedNumber
+
+    public abstract getAmountIn(tokenOut: TCurrency, amountOut: InputNumber): FormattedNumber
+
+    public abstract priceOf(token: TCurrency): FormattedNumber
 }

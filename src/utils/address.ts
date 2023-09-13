@@ -1,5 +1,5 @@
+import type { Address, Hex } from 'viem'
 import { toBytes, getAddress, pad, slice, keccak256, concat } from 'viem'
-import type { Address, Hex } from '../types'
 
 export function getCreate2Address(_from: Address, _salt: Hex, initCodeHash: Hex): Address {
     const from = toBytes(getAddress(_from))

@@ -1,11 +1,14 @@
-import { EventEmitter } from 'node:events'
-import type { Log } from 'viem'
-import type { TradeOptions, CreateTransactionResult, DexOptions, ParsedAddLpTransaction, ParsedTradeTransaction, PairInfo, Hex, Transaction, EventFilter, Address } from '../types'
-import type { NativeToken } from '../entities'
-import { Pair } from '../entities'
-import type { TransactionType } from '../constants'
+/* eslint-disable max-len */
 
-export abstract class Dex<TPairData = unknown> extends EventEmitter {
+import { EventEmitter } from 'node:events'
+import type { Log, Address, Hex } from 'viem'
+import type { NativeToken, Pair, Currency } from '../entities'
+import type { TransactionType } from '../constants'
+import type { Transaction, TradeOptions, CreateTransactionResult, EventFilter, PairData } from '../types'
+import { InvalidTransactionError } from '../errors'
+import type { DexOptions, AddLiquidityData, TradeData } from './types'
+
+export abstract class Dex<TCurrency extends Currency = Currency, TPair extends Pair<TCurrency> = Pair<TCurrency>, TPairMetadata = unknown> extends EventEmitter {
     public readonly name: string
     public readonly nativeToken: NativeToken
 
@@ -18,23 +21,33 @@ export abstract class Dex<TPairData = unknown> extends EventEmitter {
 
     public abstract isTransactionInThisDex(transaction: Transaction): boolean
 
-    public abstract getTransactionType(transaction: Transaction): TransactionType | undefined
+    public abstract getTransactionType(transaction: Transaction): TransactionType
 
     public abstract getApproveAddressForTrade(): Address
 
-    public abstract parseAddLiquidityTransaction(transaction: Transaction): ParsedAddLpTransaction
+    public abstract parseAddLiquidityTransaction(transaction: Transaction): AddLiquidityData
 
-    public abstract parseTradeTransaction(transaction: Transaction): ParsedTradeTransaction
+    public abstract parseTradeTransaction(transaction: Transaction): TradeData
 
-    public abstract createTradeTransaction(options: TradeOptions): CreateTransactionResult
+    public abstract parseGetPairMetadataResult(data: PairData<TCurrency>, callResult: Hex): TPairMetadata
 
-    public abstract createGetPairDataTransaction(pairInfo: PairInfo): CreateTransactionResult
+    public abstract createTradeTransaction(options: TradeOptions<TPair, TCurrency>): CreateTransactionResult
 
-    public abstract parseGetPairDataResult(info: PairInfo, callResult: Hex): TPairData
+    public abstract createGetPairMetadataTransaction(pairData: PairData<TCurrency>): CreateTransactionResult
 
-    public abstract createPair(info: PairInfo, data: TPairData): Pair
+    public abstract createPair(data: PairData<TCurrency>, metadata: TPairMetadata): TPair
 
-    public abstract createUpdatePairsEventFilter(pairs: Pair[]): EventFilter
+    public abstract createUpdatePairsEventFilter(pairs: TPair[]): EventFilter
 
-    public abstract updatePairsByLogs(pairs: Pair[], logs: Log[]): Pair[]
+    public abstract updatePairsByLogs(pairs: TPair[], logs: Log[]): TPair[]
+
+    protected getTransactionData(transaction: Transaction) {
+        const data = transaction.data ?? transaction.input
+
+        if (!data) {
+            throw new InvalidTransactionError(transaction, 'missing data')
+        }
+
+        return data
+    }
 }

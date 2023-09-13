@@ -1,4 +1,5 @@
-import type { Hex } from '../../types'
+import type { Hex } from 'viem'
+import { TransactionType } from '../../constants'
 
 export const ADD_LIQUIDITY_SELECTORS: Hex[] = [
     '0xe8e33700', // addLiquidity
@@ -25,6 +26,12 @@ export const TRADE_SELECTORS: Hex[] = [
     '0xb6f9de95', // swapExactETHForTokensSupportingFeeOnTransferTokens
     '0x791ac947', // swapExactTokensForETHSupportingFeeOnTransferTokens
 ]
+
+export const TRANSACTION_TYPE_BY_SELECTOR = {
+    ...Object.fromEntries(ADD_LIQUIDITY_SELECTORS.map((s) => [s, TransactionType.ADD_LIQUIDITY])),
+    ...Object.fromEntries(REMOVE_LIQUIDITY_SELECTORS.map((s) => [s, TransactionType.REMOVE_LIQUIDITY])),
+    ...Object.fromEntries(TRADE_SELECTORS.map((s) => [s, TransactionType.TRADE])),
+}
 
 export const EXACT_INPUT_TRADE_FUNCTION_NAMES = <const>[
     'swapExactTokensForTokens',

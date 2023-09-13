@@ -1,4 +1,6 @@
 export abstract class Currency {
+    public abstract readonly wrapped: Currency
+
     public readonly name: string
     public readonly symbol: string
     public readonly decimals: number
@@ -8,8 +10,6 @@ export abstract class Currency {
         this.symbol = symbol
         this.decimals = decimals
     }
-
-    public abstract get wrapped(): Currency
 
     public abstract equals(currency: Currency): boolean
 }

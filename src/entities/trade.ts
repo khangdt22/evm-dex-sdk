@@ -1,18 +1,27 @@
-import type { EncodeFunctionDataParameters } from 'viem'
-import type { TradeOptions, Address } from '../types'
+import type { Address, Hex } from 'viem'
 import type { TradeType } from '../constants'
+import type { TradeOptions } from '../types'
+import type { Pair } from './pair'
+import type { Currency } from './currency'
 
-export abstract class Trade<TOptions extends TradeOptions> {
+export abstract class Trade<TCurrency extends Currency = Currency, TPair extends Pair<TCurrency> = Pair<TCurrency>> {
     public readonly tradeType: TradeType
-    public readonly pairs: TOptions['pairs']
-    public readonly input: TOptions['input']
-    public readonly output: TOptions['output']
+
+    public readonly pairs: TPair[]
+
+    public readonly input: TCurrency
+
+    public readonly output: TCurrency
+
     public readonly recipient: Address
+
     public readonly slippage: number
+
     public readonly deadline: number
+
     public readonly useFeeOnTransfer: boolean
 
-    protected constructor(options: TOptions) {
+    protected constructor(options: TradeOptions<TPair, TCurrency>) {
         this.tradeType = options.type
         this.pairs = options.pairs
         this.input = options.input
@@ -23,7 +32,7 @@ export abstract class Trade<TOptions extends TradeOptions> {
         this.useFeeOnTransfer = !!options.feeOnTransfer
     }
 
-    public abstract getEncodeParameters(): EncodeFunctionDataParameters
+    public abstract getTransactionData(): Hex
 
     public abstract getTransactionValue(): bigint
 }
