@@ -1,6 +1,7 @@
 import type { Log, Address, Hex, Hash } from 'viem'
 import { encodeFunctionData, isAddressEqual, decodeFunctionData, decodeFunctionResult, decodeEventLog, slice } from 'viem'
 import type { AbiEvent } from 'abitype'
+import type { Nullable } from '@khangdt22/utils/types'
 import { Dex } from '../dex'
 import type { CreateTransactionResult, Transaction, EventFilter } from '../../types'
 import { UNISWAP_V2_ROUTER, UNISWAP_V2_PAIR } from '../../abis'
@@ -92,10 +93,10 @@ export class UniswapV2 extends Dex<Token | NativeToken, UniswapV2Pair, UniswapV2
         const [path, recipient, deadline] = (args as any).slice(-3)
 
         let tradeType: TradeType
-        let amountIn: bigint | undefined
-        let amountOutMin: bigint | undefined
-        let amountOut: bigint | undefined
-        let amountInMax: bigint | undefined
+        let amountIn: Nullable<bigint>
+        let amountOutMin: Nullable<bigint>
+        let amountOut: Nullable<bigint>
+        let amountInMax: Nullable<bigint>
 
         if (this.isExactInputTradeFunction(functionName)) {
             tradeType = TradeType.EXACT_INPUT

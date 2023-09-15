@@ -1,11 +1,11 @@
 import type { Address, Hex, Hash } from 'viem'
 
 export interface Transaction {
-    hash?: Hash
-    to?: Address
-    data?: Hex
-    input?: Hex
-    value?: bigint
+    hash?: Hash | null
+    to?: Address | null
+    data?: Hex | null
+    input?: Hex | null
+    value?: bigint | null
 }
 
 export interface CreateTransactionResult {
