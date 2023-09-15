@@ -134,7 +134,7 @@ export class UniswapV2 extends Dex<Token | NativeToken, UniswapV2Pair, UniswapV2
     }
 
     public parseGetPairMetadataResult(data: UniswapV2PairData, callResult: Hex): UniswapV2PairMetadata {
-        const pair = new UniswapV2Pair(data, { reserveA: 0n, reserveB: 0n })
+        const pair = this.createPair(data, { reserveA: 0n, reserveB: 0n })
 
         const result = decodeFunctionResult({
             abi: UNISWAP_V2_PAIR,
