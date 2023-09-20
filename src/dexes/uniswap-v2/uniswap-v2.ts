@@ -38,6 +38,11 @@ export class UniswapV2 extends Dex<Token | NativeToken, UniswapV2Pair, UniswapV2
 
     public getTransactionType(transaction: Transaction) {
         const data = this.getTransactionData(transaction)
+
+        if (data.length < 10) {
+            return TransactionType.UNKNOWN
+        }
+
         const selector = slice(data, 0, 4, { strict: true })
 
         return TRANSACTION_TYPE_BY_SELECTOR[selector] ?? TransactionType.UNKNOWN
