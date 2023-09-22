@@ -1,14 +1,9 @@
+import type { NativeTokenData } from '../types'
 import { Currency } from './currency'
 import type { Token } from './token'
 
-export interface NativeTokenData {
-    name: string
-    symbol: string
-    decimals: number
-    wrapped: Token
-}
-
 export class NativeToken extends Currency {
+    public readonly isNative: boolean = true
     public readonly wrapped: Token
 
     public constructor({ name, symbol, decimals, wrapped }: NativeTokenData) {

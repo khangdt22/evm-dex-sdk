@@ -1,28 +1,32 @@
-/* eslint-disable max-len */
-
 import type { Address } from 'viem'
-import type { Pair, Currency } from '../entities'
 import type { TradeType } from '../constants'
-import type { InputNumber } from './number'
+import { Currency } from '../entities'
 
-export interface BaseTradeOptions<TPair = Pair, TCurrency = Currency> {
-    pairs: TPair[]
-    input: TCurrency
-    output: TCurrency
+export interface Pair {
+    tokenA: Address
+    tokenB: Address
+    fee: number
+}
+
+export interface BaseTradeOptions {
+    pairs: Pair[]
+    input: Address | Currency
+    output: Address | Currency
     recipient: Address
-    slippage: number
     deadline: number
     feeOnTransfer?: boolean
 }
 
-export interface ExactInputTradeOptions<TPair = Pair, TCurrency = Currency> extends BaseTradeOptions<TPair, TCurrency> {
+export interface ExactInputTradeOptions extends BaseTradeOptions {
     type: TradeType.EXACT_INPUT
-    amountIn: InputNumber
+    amountIn: bigint
+    amountOutMin: bigint
 }
 
-export interface ExactOutputTradeOptions<TPair = Pair, TCurrency = Currency> extends BaseTradeOptions<TPair, TCurrency> {
+export interface ExactOutputTradeOptions extends BaseTradeOptions {
     type: TradeType.EXACT_OUTPUT
-    amountOut: InputNumber
+    amountOut: bigint
+    amountInMax: bigint
 }
 
-export type TradeOptions<TPair = Pair, TCurrency = Currency> = ExactInputTradeOptions<TPair, TCurrency> | ExactOutputTradeOptions<TPair, TCurrency>
+export type TradeOptions = ExactInputTradeOptions | ExactOutputTradeOptions

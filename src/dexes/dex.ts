@@ -1,20 +1,16 @@
-/* eslint-disable max-len */
-
-import { EventEmitter } from 'node:events'
-import type { Log, Address, Hex } from 'viem'
-import type { NativeToken, Pair, Currency } from '../entities'
+import type { Address, Hex } from 'viem'
+import { slice } from 'viem'
 import type { TransactionType } from '../constants'
-import type { Transaction, TradeOptions, CreateTransactionResult, EventFilter, PairData } from '../types'
+import type { Transaction, TradeOptions, TransactionParams } from '../types'
 import { InvalidTransactionError } from '../errors'
-import type { DexOptions, AddLiquidityData, TradeData } from './types'
+import { NativeToken } from '../entities'
+import type { DexOptions } from './types'
 
-export abstract class Dex<TCurrency extends Currency = Currency, TPair extends Pair<TCurrency> = Pair<TCurrency>, TPairMetadata = unknown> extends EventEmitter {
+export abstract class Dex {
     public readonly name: string
     public readonly nativeToken: NativeToken
 
     protected constructor(options: DexOptions) {
-        super()
-
         this.name = options.name
         this.nativeToken = options.nativeToken
     }
@@ -25,29 +21,25 @@ export abstract class Dex<TCurrency extends Currency = Currency, TPair extends P
 
     public abstract getApproveAddressForTrade(): Address
 
-    public abstract parseAddLiquidityTransaction(transaction: Transaction): AddLiquidityData
+    public abstract parseTradeTransaction(transaction: Transaction): TradeOptions
 
-    public abstract parseTradeTransaction(transaction: Transaction): TradeData
+    public abstract createTradeTransaction(options: TradeOptions): TransactionParams
 
-    public abstract parseGetPairMetadataResult(data: PairData<TCurrency>, callResult: Hex): TPairMetadata
+    protected getSelector(data: Hex) {
+        return slice(data, 0, 4, { strict: true })
+    }
 
-    public abstract createTradeTransaction(options: TradeOptions<TPair, TCurrency>): CreateTransactionResult
+    protected getTransactionData<T extends boolean = true>(transaction: Transaction, throws?: T) {
+        if (throws === undefined) {
+            throws = true as T
+        }
 
-    public abstract createGetPairMetadataTransaction(pairData: PairData<TCurrency>): CreateTransactionResult
+        const data = transaction.data ?? transaction.input ?? undefined
 
-    public abstract createPair(data: PairData<TCurrency>, metadata: TPairMetadata): TPair
-
-    public abstract createUpdatePairsEventFilter(pairs: TPair[]): EventFilter
-
-    public abstract updatePairsByLogs(pairs: TPair[], logs: Log[]): TPair[]
-
-    protected getTransactionData(transaction: Transaction) {
-        const data = transaction.data ?? transaction.input
-
-        if (!data) {
+        if (!data && throws) {
             throw new InvalidTransactionError(transaction, 'missing data')
         }
 
-        return data
+        return data as T extends true ? Hex : Hex | undefined
     }
 }

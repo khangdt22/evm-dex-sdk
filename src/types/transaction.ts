@@ -8,7 +8,7 @@ export interface Transaction {
     value?: bigint | null
 }
 
-export interface CreateTransactionResult {
+export interface TransactionParams {
     to: Address
     data: Hex
     value: bigint

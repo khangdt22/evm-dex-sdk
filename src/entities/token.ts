@@ -3,6 +3,7 @@ import { isAddressEqual } from 'viem'
 import { Currency } from './currency'
 
 export class Token extends Currency {
+    public readonly isNative: boolean = false
     public readonly wrapped = this
 
     public constructor(public readonly address: Address, name: string, symbol: string, decimals: number) {
