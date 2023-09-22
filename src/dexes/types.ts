@@ -8,13 +8,13 @@ export interface DexOptions {
 }
 
 export type ExactInputTradeParams = ExactInputTradeOptions & {
-    path: Address[] | readonly Address[]
+    path: Address[]
 }
 
 export type ExactOutputTradeParams = ExactOutputTradeOptions & {
-    path: Address[] | readonly Address[]
+    path: Address[]
 }
 
 export type TradeParams = TradeOptions & {
-    path: Address[] | readonly Address[]
+    path: Address[]
 }
