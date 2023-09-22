@@ -4,7 +4,7 @@ import type { TransactionType } from '../constants'
 import type { Transaction, TradeOptions, TransactionParams } from '../types'
 import { InvalidTransactionError } from '../errors'
 import { NativeToken } from '../entities'
-import type { DexOptions } from './types'
+import type { DexOptions, TradeParams } from './types'
 
 export abstract class Dex {
     public readonly name: string
@@ -21,7 +21,7 @@ export abstract class Dex {
 
     public abstract getApproveAddressForTrade(): Address
 
-    public abstract parseTradeTransaction(transaction: Transaction): TradeOptions
+    public abstract parseTradeTransaction(transaction: Transaction): TradeParams
 
     public abstract createTradeTransaction(options: TradeOptions): TransactionParams
 

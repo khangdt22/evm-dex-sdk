@@ -43,7 +43,7 @@ export class UniswapV2 extends Dex {
         return this.router
     }
 
-    public parseTradeTransaction(transaction: Transaction): TradeOptions {
+    public parseTradeTransaction(transaction: Transaction) {
         return parseUniswapV2TradeTransaction.call(this, transaction)
     }
 

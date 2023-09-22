@@ -1,10 +1,11 @@
 import { decodeFunctionData, type Address } from 'viem'
-import type { Transaction, TradeOptions, ExactInputTradeOptions, ExactOutputTradeOptions, Pair } from '../../../types'
+import type { Transaction, Pair } from '../../../types'
 import { UNISWAP_V2_ROUTER, UNISWAP_V2_ROUTER_EXACT_INPUT_SWAP, UNISWAP_V2_ROUTER_EXACT_OUTPUT_SWAP } from '../../../abis'
 import { TRADE_FUNCTION_NAMES, EXACT_INPUT_TRADE_FUNCTION_NAMES, EXACT_OUTPUT_TRADE_FUNCTION_NAMES } from '../constants'
 import type { UniswapV2 } from '../uniswap-v2'
 import { InvalidTransactionError } from '../../../errors'
 import { TradeType } from '../../../constants'
+import type { TradeParams, ExactInputTradeParams, ExactOutputTradeParams } from '../../types'
 
 type ExactInputDecodeResult = ReturnType<typeof decodeFunctionData<typeof UNISWAP_V2_ROUTER_EXACT_INPUT_SWAP>>
 
@@ -32,7 +33,7 @@ function pathToPairs(this: UniswapV2, path: readonly Address[]) {
     return pairs
 }
 
-function parseExactInput(this: UniswapV2, decoded: ExactInputDecodeResult, value: bigint): ExactInputTradeOptions {
+function parseExactInput(this: UniswapV2, decoded: ExactInputDecodeResult, value: bigint): ExactInputTradeParams {
     const { functionName, args } = decoded
 
     let params: readonly [bigint, bigint, readonly Address[], Address, bigint]
@@ -48,6 +49,7 @@ function parseExactInput(this: UniswapV2, decoded: ExactInputDecodeResult, value
         type: TradeType.EXACT_INPUT,
         amountIn: params[0],
         amountOutMin: params[1],
+        path: params[2],
         pairs: pathToPairs.call(this, params[2]),
         recipient: params[3],
         deadline: Number(params[4]),
@@ -57,7 +59,7 @@ function parseExactInput(this: UniswapV2, decoded: ExactInputDecodeResult, value
     }
 }
 
-function parseExactOutput(this: UniswapV2, decoded: ExactOutputDecodeResult, value: bigint): ExactOutputTradeOptions {
+function parseExactOutput(this: UniswapV2, decoded: ExactOutputDecodeResult, value: bigint): ExactOutputTradeParams {
     const { functionName, args } = decoded
 
     let amountOut: bigint
@@ -78,6 +80,7 @@ function parseExactOutput(this: UniswapV2, decoded: ExactOutputDecodeResult, val
         type: TradeType.EXACT_OUTPUT,
         amountOut,
         amountInMax,
+        path: params[0],
         pairs: pathToPairs.call(this, params[0]),
         recipient: params[1],
         deadline: Number(params[2]),
@@ -87,7 +90,7 @@ function parseExactOutput(this: UniswapV2, decoded: ExactOutputDecodeResult, val
     }
 }
 
-export function parseUniswapV2TradeTransaction(this: UniswapV2, transaction: Transaction): TradeOptions {
+export function parseUniswapV2TradeTransaction(this: UniswapV2, transaction: Transaction): TradeParams {
     const data = this.getTransactionData(transaction)
     const decoded = decodeFunctionData({ abi: UNISWAP_V2_ROUTER, data })
 
