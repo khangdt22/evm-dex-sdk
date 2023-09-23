@@ -15,7 +15,7 @@ export class UniswapV2Trade extends Trade {
         this.path = [getTokenAddress(options.input)]
 
         for (const [i, pair] of this.pairs.entries()) {
-            this.path.push(isAddressEqual(this.path[i], pair.tokenA) ? pair.tokenA : pair.tokenB)
+            this.path.push(isAddressEqual(this.path[i], pair.tokenA) ? pair.tokenB : pair.tokenA)
         }
     }
 
